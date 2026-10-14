@@ -8,9 +8,19 @@ from datetime import datetime
 
 import streamlit as st
 
-from crew import TEAM, run_crew
-
 st.set_page_config(page_title="AI Research Team", page_icon="🧠", layout="wide")
+
+# Friendly message if a project file did not get uploaded to GitHub
+try:
+    from crew import TEAM, run_crew
+except ImportError as exc:
+    st.error(f"A project file is missing from your GitHub repo or is in the wrong place.\n\n`{exc}`")
+    st.markdown(
+        "The **main page** of your repo must list all of these files (no folders needed):\n\n"
+        "`app.py` · `crew.py` · `config.py` · `tools.py` · `requirements.txt` · "
+        "`agent_planner.py` · `agent_researcher.py` · `agent_analyst.py` · `agent_writer.py`"
+    )
+    st.stop()
 
 # ---------- Styling ----------
 CSS = """
@@ -75,17 +85,19 @@ st.markdown(
 )
 
 # ---------- Sidebar ----------
-def _secret_key() -> str:
+def _get_api_key() -> str:
+    """The key is never typed into the page. It comes from Streamlit Secrets (or an env variable)."""
     try:
-        return st.secrets.get("GROQ_API_KEY", "") or os.environ.get("GROQ_API_KEY", "")
-    except Exception:
-        return os.environ.get("GROQ_API_KEY", "")
+        key = st.secrets.get("GROQ_API_KEY", "")
+    except Exception:  # no secrets file configured
+        key = ""
+    return (key or os.environ.get("GROQ_API_KEY", "")).strip()
 
+
+api_key = _get_api_key()
 
 with st.sidebar:
     st.header("⚙️ Settings")
-        help="Free key at console.groq.com. On Streamlit Cloud, store it in Secrets instead.",
-    )
     depth = st.select_slider("Research depth", ["Quick", "Standard", "Deep"], value="Quick")
     with st.expander("Advanced"):
         model = st.text_input(
@@ -132,7 +144,10 @@ if not go:
 # ---------- Run ----------
 if go:
     if not api_key:
-        st.error("Please add your Groq API key in the sidebar.")
+        st.error(
+            "The Groq API key is not set. In Streamlit open **Manage app → Settings → Secrets**, "
+            'add `GROQ_API_KEY = "gsk_your_key"`, save, then reboot the app.'
+        )
         st.stop()
     if not topic.strip():
         st.warning("Please type a topic first.")
