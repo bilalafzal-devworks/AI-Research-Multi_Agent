@@ -84,10 +84,6 @@ def _secret_key() -> str:
 
 with st.sidebar:
     st.header("⚙️ Settings")
-    api_key = st.text_input(
-        "Groq API key",
-        type="password",
-        value=_secret_key(),
         help="Free key at console.groq.com. On Streamlit Cloud, store it in Secrets instead.",
     )
     depth = st.select_slider("Research depth", ["Quick", "Standard", "Deep"], value="Quick")
